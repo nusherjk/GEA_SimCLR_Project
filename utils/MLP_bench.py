@@ -11,6 +11,12 @@ This gives  ~1000–2000 unique architectures.
 """
 import json
 
+HIDDEN_SIZES = [64, 128, 256, 512]
+ACTIVATIONS = ['relu', 'silu', 'tanh']
+NUM_LAYERS = 3
+INPUT_DIM = 512
+mlp_bench = {}
+
 
 def encode_arch(layers):
     return str([(layer['out'], layer['activation']) for layer in layers])
