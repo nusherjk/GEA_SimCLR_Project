@@ -16,7 +16,7 @@ ACTIVATIONS = ['relu', 'silu', 'tanh']
 NUM_LAYERS = 3
 INPUT_DIM = 512
 mlp_bench = {}
-
+pop_size = 100
 
 def encode_arch(layers):
     return str([(layer['out'], layer['activation']) for layer in layers])
