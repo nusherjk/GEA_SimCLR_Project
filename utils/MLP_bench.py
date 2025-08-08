@@ -18,15 +18,41 @@ INPUT_DIM = 512
 mlp_bench = {}
 pop_size = 100
 
-def encode_arch(layers):
-    return str([(layer['out'], layer['activation']) for layer in layers])
+# def encode_arch(layers):
+#     return str([(layer['out'], layer['activation']) for layer in layers])
 ############################
+def encode_arch(layers):
+    """
+        Encodes an architecture into a string from a list of layer dictionaries.
+        Each dictionary should have:
+          - 'in': number of input neurons
+          - 'out': number of output neurons
+          - 'activation': activation function name
+
+        Example:
+        layers = [
+            {"in": 64, "out": 128, "activation": "ReLU"},
+            {"in": 128, "out": 64, "activation": "Tanh"}
+        ]
+        encode_arch(layers) -> "[(64,128,ReLU),(128,64,Tanh)]"
+        """
+    try:
+        encoded = [
+            (int(layer["in"]), int(layer["out"]), str(layer["activation"]))
+            for layer in layers
+        ]
+    except (KeyError, TypeError) as e:
+        raise ValueError(f"Invalid layer format: {e}")
+
+    return str(encoded)
+
+
 
 
 ##################
 
-with open("mlp_bench.json") as f:
-    mlp_bench = json.load(f)
+# with open("mlp_bench.json") as f:
+#     mlp_bench = json.load(f)
 
 def evaluate_arch(arch):
     key = encode_arch(arch)
