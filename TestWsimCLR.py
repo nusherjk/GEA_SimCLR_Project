@@ -16,12 +16,22 @@ import torchvision.transforms as transforms
 import json
 device = 'cpu'
 if  __name__ == '__main__':
-    # Initialize 10 MLP Heads randomly from MlP Bench
+
+
+    #empty list population and history
+
+    population_queue= list()
+    history = list()
+    C =10
+
+    # Initialize 10 MLP Heads randomly from MlP Bench which means C=10
     train_loader = load_cifar10_f_jacobian(64)
     with open('utils/mlp_bench.json') as f:
         mlp_bench = json.load(f)
 
-
+    '''
+    random_configurations : Population Queue for 
+    '''
     random_configurations = list()
     lower_range = 0
     upper_range = len(mlp_bench) -1
@@ -54,10 +64,13 @@ if  __name__ == '__main__':
         })
 
 
+
+
     # pprint.pprint(random_configurations)
     # Rank by highest score.
     sorted_random_configurations = sorted(random_configurations, key=lambda x: x["score"], reverse=True)
     # Select top 30%
+    # Drop C -P worst individuals from population p=7
     selected_population = sorted_random_configurations[:3]
 
 

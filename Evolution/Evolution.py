@@ -10,8 +10,7 @@ def mutate_config(config):
     [{'in': 128, 'out': 256, 'activation': 'relu', 'batchnorm': True}, ...]
     """
     new_config = copy.deepcopy(config)
-    # mutation = random.choice(["depth", "width", "activation", "regularization"])
-    mutation = random.choice(["depth"])
+    mutation = random.choice(["depth", "width", "activation", "regularization"])
     print(new_config)
     if mutation == "depth":
         # Add or remove a layer
@@ -56,7 +55,12 @@ def mutate_config(config):
     elif mutation == "regularization":
         # Toggle batchnorm
         idx = random.randrange(len(new_config))
-        new_config[idx]['batchnorm'] = not new_config[idx].get('batchnorm', False)
+        if 'batchnorm' not in new_config[idx]:
+            # If not present, add it and enable it
+            new_config[idx]['batchnorm'] = True
+        else:
+            # Toggle
+            new_config[idx]['batchnorm'] = not new_config[idx]['batchnorm']
 
     return new_config
 
@@ -75,33 +79,3 @@ def update_population(old_population, num_children):
     """Append new generation to the existing population."""
     new_gen = create_new_generation(old_population, num_children)
     return old_population + new_gen
-import json
-import numpy as np
-
-# Example
-if __name__ == "__main__":
-    with open('utils/mlp_bench.json') as f:
-        mlp_bench = json.load(f)
-
-    random_configurations = list()
-    lower_range = 0
-    upper_range = len(mlp_bench) - 1
-
-    positions = [np.random.randint(lower_range, upper_range + 1) for _ in range(2)]
-    population  = list()
-    for position in positions:
-        population.append(mlp_bench[position])
-
-
-
-
-
-    # evolve population for 2 generations
-    for gen in range(2):
-        print(f"\n=== Generation {gen} ===")
-        population = update_population(population, num_children=3)  # add 3 new configs
-        for i, cfg in enumerate(population):
-            print(f"Config {i}:")
-            print(cfg)
-                # for layer in cfg:
-                #     print("   ", layer)
