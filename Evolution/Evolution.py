@@ -1,5 +1,6 @@
 import random
 import copy
+from functools import partial
 
 ACTIVATIONS = ["relu", "silu", "tanh"]
 
@@ -11,7 +12,7 @@ def mutate_config(config):
     """
     new_config = copy.deepcopy(config)
     mutation = random.choice(["depth", "width", "activation", "regularization"])
-    print(new_config)
+    # print(new_config)
     if mutation == "depth":
         # Add or remove a layer
         if random.random() < 0.5 and len(new_config) > 1:
@@ -65,15 +66,22 @@ def mutate_config(config):
     return new_config
 
 
+# def create_new_generation(configs, num_children):
+#     """Create new configs from parent configs by mutation."""
+#     new_gen = []
+#     for _ in range(num_children):
+#         parent = random.choice(configs)
+#         child_cfg = mutate_config(parent)
+#         new_gen.append(child_cfg)
+#     return new_gen
+
+
 def create_new_generation(configs, num_children):
-    """Create new configs from parent configs by mutation."""
     new_gen = []
     for _ in range(num_children):
-        parent = random.choice(configs)
-        child_cfg = mutate_config(parent)
+        child_cfg = mutate_config(configs)
         new_gen.append(child_cfg)
     return new_gen
-
 
 def update_population(old_population, num_children):
     """Append new generation to the existing population."""
