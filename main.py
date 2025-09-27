@@ -10,8 +10,12 @@ from train.SimClr_train import train_simclr
 from train.eval_simCLR import evaluate
 import json
 import numpy as np
-
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 BATCH_SIZE =64
+EPOCHS = 12
+C = 10
+P = 7
+
 def construct_SimClr(mlp_config):
     encoder = Encoder()
     projection_head = MLPProjector(mlp_config)
@@ -20,14 +24,14 @@ def construct_SimClr(mlp_config):
 
 
 def calculateZeroProxy(config):
-    encoder, projector = construct_SimClr(arch)
+    encoder, projector = construct_SimClr(config)
     # model = SimCLR(arch)
 
     x, y = load_cifar10_batch(BATCH_SIZE)
 
     y = y.cpu().tolist()
     jacobs_batch = get_batch_jacobian(encoder, projector, x)
-    jacobs_batch = jacobs_batch.reshape(jacobs_batch.size(0), -1).cpu().tolist()
+    jacobs_batch = jacobs_batch.reshape(jacobs_batch.size(0), -1).to(DEVICE).tolist()
     try:
         score = eval_score_perclass(jacobs_batch, y)
     except Exception as e:
@@ -38,13 +42,11 @@ def calculateZeroProxy(config):
 
 
 if __name__ == '__main__':
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    epochs = 100
+    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    epochs = EPOCHS
     population_queue = list()
     history = list()
-    C = 10
 
-    P = 7
 
     # Initialize 10 MLP Heads randomly from MlP Bench which means C=10
     # train_loader = load_cifar10_f_jacobian(64)
@@ -62,22 +64,9 @@ if __name__ == '__main__':
     for position in positions:
 
         arch = mlp_bench[position]
-        # encoder, projector = construct_SimClr(arch)
-        # # model = SimCLR(arch)
-        #
-        # x, y = load_cifar10_batch(64)
-        #
-        # y = y.cpu().tolist()
-        # jacobs_batch = get_batch_jacobian(encoder, projector, x)
-        # jacobs_batch = jacobs_batch.reshape(jacobs_batch.size(0), -1).cpu().tolist()
-        # try:
-        #     score = eval_score_perclass(jacobs_batch, y)
-        # except Exception as e:
-        #     print(e)
-        #     score = np.nan
+
         score = calculateZeroProxy(arch)
         random_configurations.append({
-            # "position": position,
             "mlp_conf": arch,
             "score": score
         })
@@ -90,21 +79,21 @@ if __name__ == '__main__':
     # Drop C -P worst individuals from population p=7
     selected_population = sorted_random_configurations[:3]
 
-    # Train this selected population for 1 epochs and evaluate
+    # Train this selected population for Set epochs and evaluate
 
     for architecture in selected_population:
         encoder, projector = train_simclr(root="./data",
-                                        epochs=epochs,
+                                        epochs=EPOCHS,
                                         batch_size=BATCH_SIZE,
                                         lr=3e-4,
                                         weight_decay=1e-6,
                                         temperature=0.5,
                                         projector_config=architecture['mlp_conf'],  # use default
-                                        device=device,
+                                        device=DEVICE,
                                         num_workers=2,
                                           )
 
-        top_1_accuracy = evaluate(encoder, device)
+        top_1_accuracy = evaluate(encoder, DEVICE)
         print(top_1_accuracy)
         history.append({
             # "position": architecture['position'],
@@ -131,18 +120,18 @@ if __name__ == '__main__':
         generation = sorted(generation, key=lambda x: x["score"], reverse=True)
         top_child = generation[0]
         encoder, projector = train_simclr(root="./data",
-                                          epochs=1,
-                                          batch_size=128,
+                                          epochs=EPOCHS,
+                                          batch_size=BATCH_SIZE,
                                           lr=3e-4,
                                           weight_decay=1e-6,
                                           temperature=0.5,
                                           projector_config=top_child['mlp_conf'],  # use default
-                                          device=device,
+                                          device=DEVICE,
                                           num_workers=2,
                                           )
 
 
-        top_child_accuracy = evaluate(encoder, device)
+        top_child_accuracy = evaluate(encoder, DEVICE)
         history.append({
             "mlp_conf": top_child,
             "accuracy": top_child_accuracy

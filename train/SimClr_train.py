@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, Dataset
 from models.encoder_simCLR import Encoder
 from models.mlp_projector import MLPProjector
 from models.simClr_augmentation import SimCLRTransform
+from torch.utils.tensorboard import SummaryWriter
 import random
 import math
 import time
@@ -97,6 +98,7 @@ def train_simclr(
     device=None,
     num_workers=4
 ):
+    writer = SummaryWriter(log_dir="runs/train_log")
     """
     Trains SimCLR on CIFAR-10 using your SimCLR(nn.Module).
     """
@@ -154,10 +156,13 @@ def train_simclr(
             optimizer.step()
 
             epoch_loss += loss.item()
+            writer.add_scalar("Loss/train", loss.item(), epoch)
 
         scheduler.step()
         avg_loss = epoch_loss / len(train_loader)
         print(f"Epoch [{epoch}/{epochs}] - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.2e}")
+        writer.close()
+
 
     return encoder, projection_head
 
