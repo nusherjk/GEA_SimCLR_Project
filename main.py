@@ -1,3 +1,5 @@
+import random
+
 import torch.cuda
 
 from models.encoder_simCLR import Encoder
@@ -5,16 +7,21 @@ from models.mlp_projector import MLPProjector
 from load_cifer10 import load_cifar10_f_jacobian
 
 from Jacobian.Jacobian_score import load_cifar10_batch, get_batch_jacobian, eval_score_perclass
-from Evolution.Evolution import update_population, create_new_generation, mutate_config
+from Evolution.Evolution import update_population, create_new_generation, mutate_config, validate_config
 from train.SimClr_train import train_simclr
 from train.eval_simCLR import evaluate
 import json
 import numpy as np
+
+#P/S/C=10/5/200.
+
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 BATCH_SIZE =64
-EPOCHS = 12
-C = 10
-P = 7
+EPOCHS = 0
+C = 10  #200
+P = 7   #10
+S = 5  #5
+
 
 def construct_SimClr(mlp_config):
     encoder = Encoder()
@@ -76,8 +83,8 @@ if __name__ == '__main__':
     sorted_random_configurations = sorted(random_configurations, key=lambda x: x["score"], reverse=True)
 
     # Select top 30%
-    # Drop C -P worst individuals from population p=7
-    selected_population = sorted_random_configurations[:3]
+    # Drop C -P worst individuals from population
+    selected_population = sorted_random_configurations[:P]
 
     # Train this selected population for Set epochs and evaluate
 
@@ -96,21 +103,36 @@ if __name__ == '__main__':
         top_1_accuracy = evaluate(encoder, DEVICE)
         print(top_1_accuracy)
         history.append({
+            "encoder": encoder,
+            "projector": projector,
             # "position": architecture['position'],
             "mlp_conf": architecture['mlp_conf'],
             "accuracy": top_1_accuracy
         })
 
     # Rank by highest accuracy.
-    history = sorted(history, key=lambda x: x["accuracy"], reverse=True)
+    # history = sorted(history, key=lambda x: x["accuracy"], reverse=True)
 
 
 
     while len(history) < C:
-        parent = history[0] # take the best accuracy one.
+
+
+        # take sample set len=S from the population
+        sample = [selected_population[np.random.randint(0,len(selected_population))] for _ in range(P)]
+        sample = sorted(sample, key=lambda x : x["score"], reverse=True)
+        parent = sample[0]  # take the best scored one.
+
+
+
+
+
         generation = list()
         while len(generation)<P:
-            child_arch = mutate_config(parent['mlp_head'])
+            child_arch = mutate_config(parent['mlp_conf'])
+            # print(child_arch)
+            child_arch = validate_config(child_arch)
+            # print(child_arch)
             child_arch_score = calculateZeroProxy(child_arch)
             generation.append({
                 "mlp_conf": child_arch,
@@ -130,12 +152,24 @@ if __name__ == '__main__':
                                           num_workers=2,
                                           )
 
-
+        selected_population.append(top_child)
         top_child_accuracy = evaluate(encoder, DEVICE)
+        # torch.save(encoder.state_dict(), "simclr_model.pth")
         history.append({
-            "mlp_conf": top_child,
+            "encoder": encoder,
+            "projector": projector,
+            "mlp_conf": top_child["mlp_conf"],
             "accuracy": top_child_accuracy
         })
+        selected_population.pop(0)
+
+    sorted_history = sorted(history, key=lambda x: x["accuracy"])
+    top_performer = sorted_history[0]
+    torch.save(top_performer['encoder'].state_dict(), "simclr_encoder.pth")
+    torch.save(top_performer['projector'].state_dict(), "simclr_encoder.pth")
+    print(f"best performing MLP configuration:{top_performer['mlp_conf']}")
+
+
 
 
 

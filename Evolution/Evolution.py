@@ -4,6 +4,19 @@ from functools import partial
 
 ACTIVATIONS = ["relu", "silu", "tanh"]
 
+
+def validate_config(config, input_dim=512, output_dim=128):
+    # Ensure first layer matches encoder output
+    config[0]['in'] = input_dim
+    # Ensure last layer matches projection output
+    config[-1]['out'] = output_dim
+
+    # Fix all intermediate connections
+    for i in range(len(config) - 1):
+        config[i + 1]['in'] = config[i]['out']
+    return config
+
+
 def mutate_config(config):
     """
     Apply one random mutation to a given MLP config.

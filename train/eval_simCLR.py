@@ -17,7 +17,7 @@ def evaluate(model, device):
     with torch.no_grad():
         for x, y in test_loader:
             x = x.to(device)
-            h = model.encoder(x).squeeze()
+            h = model(x)
             features.append(h.cpu())
             labels.append(y)
     features = torch.cat(features, dim=0)
