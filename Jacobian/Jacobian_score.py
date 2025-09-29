@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import torchvision
 import torchvision.transforms as transforms
+from torch.utils.tensorboard import SummaryWriter
+import uuid
 
 @DeprecationWarning
 def get_individual_jacobian(model, input_image):
@@ -75,13 +77,16 @@ def load_cifar10_batch(batch_size=64):
 
 
 def get_batch_jacobian(encoder, projection_head, x):
+
+
     torch.autograd.set_detect_anomaly(True)
     encoder.zero_grad()
     projection_head.zero_grad()
 
     x.requires_grad_(True)
-
+    # writer.add_graph(encoder, x)
     h = encoder(x)
+    # writer.add_graph(projection_head, h)
     z = projection_head(h)
     like_z = torch.ones_like(z)
     z.backward(like_z)

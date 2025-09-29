@@ -1,4 +1,5 @@
 import random
+import uuid
 
 import torch.cuda
 from torch.utils.tensorboard import SummaryWriter
@@ -9,6 +10,7 @@ from load_cifer10 import load_cifar10_f_jacobian
 
 from Jacobian.Jacobian_score import load_cifar10_batch, get_batch_jacobian, eval_score_perclass
 from Evolution.Evolution import update_population, create_new_generation, mutate_config, validate_config
+from models.simclr import SimCLR
 from train.SimClr_train import train_simclr
 from train.eval_simCLR import evaluate
 import json
@@ -18,7 +20,7 @@ import numpy as np
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 BATCH_SIZE =64
-EPOCHS = 0
+EPOCHS = 1
 C = 200  #200
 P = 10   #10
 S = 5  #5
@@ -32,11 +34,12 @@ def construct_SimClr(mlp_config):
 
 
 def calculateZeroProxy(config):
+    writer = SummaryWriter(log_dir=f"./logs/models/{uuid.uuid4()}")
     encoder, projector = construct_SimClr(config)
-    # model = SimCLR(arch)
-
+    model = SimCLR(arch)
     x, y = load_cifar10_batch(BATCH_SIZE)
-
+    writer.add_graph(model, x)
+    writer.close()
     y = y.cpu().tolist()
     jacobs_batch = get_batch_jacobian(encoder, projector, x)
     jacobs_batch = jacobs_batch.reshape(jacobs_batch.size(0), -1).to(DEVICE).tolist()
@@ -154,6 +157,12 @@ if __name__ == '__main__':
                                           num_workers=2,
                                           )
 
+        torch.save({
+            "encoder": encoder.state_dict(),
+            "projector": projector.state_dict(),
+            "config": top_child['mlp_conf']
+        }, f"checkpoints/simclr_arch_{i}.pt")
+
         selected_population.append(top_child)
         top_child_accuracy = evaluate(encoder, DEVICE)
         # torch.save(encoder.state_dict(), "simclr_model.pth")
@@ -168,8 +177,8 @@ if __name__ == '__main__':
 
     sorted_history = sorted(history, key=lambda x: x["accuracy"])
     top_performer = sorted_history[0]
-    torch.save(top_performer['encoder'].state_dict(), "simclr_encoder.pth")
-    torch.save(top_performer['projector'].state_dict(), "simclr_encoder.pth")
+    torch.save(top_performer['encoder'].state_dict(), "out/simclr_encoder.pth")
+    torch.save(top_performer['projector'].state_dict(), "out/simclr_projector.pth")
     writer.close()
     print(f"best performing MLP configuration:{top_performer['mlp_conf']}")
 
