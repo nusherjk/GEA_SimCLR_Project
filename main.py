@@ -1,6 +1,7 @@
 import random
 
 import torch.cuda
+from torch.utils.tensorboard import SummaryWriter
 
 from models.encoder_simCLR import Encoder
 from models.mlp_projector import MLPProjector
@@ -18,8 +19,8 @@ import numpy as np
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 BATCH_SIZE =64
 EPOCHS = 0
-C = 10  #200
-P = 7   #10
+C = 200  #200
+P = 10   #10
 S = 5  #5
 
 
@@ -49,6 +50,7 @@ def calculateZeroProxy(config):
 
 
 if __name__ == '__main__':
+    writer = SummaryWriter(log_dir='./logs/GenerationsVAccuracy')
     # device = 'cuda' if torch.cuda.is_available() else 'cpu'
     epochs = EPOCHS
     population_queue = list()
@@ -113,10 +115,10 @@ if __name__ == '__main__':
     # Rank by highest accuracy.
     # history = sorted(history, key=lambda x: x["accuracy"], reverse=True)
 
-
+    i=0
 
     while len(history) < C:
-
+        i+=1
 
         # take sample set len=S from the population
         sample = [selected_population[np.random.randint(0,len(selected_population))] for _ in range(P)]
@@ -155,6 +157,7 @@ if __name__ == '__main__':
         selected_population.append(top_child)
         top_child_accuracy = evaluate(encoder, DEVICE)
         # torch.save(encoder.state_dict(), "simclr_model.pth")
+        writer.add_scalar("Generation/Accuracy", top_child_accuracy , i)
         history.append({
             "encoder": encoder,
             "projector": projector,
@@ -167,6 +170,7 @@ if __name__ == '__main__':
     top_performer = sorted_history[0]
     torch.save(top_performer['encoder'].state_dict(), "simclr_encoder.pth")
     torch.save(top_performer['projector'].state_dict(), "simclr_encoder.pth")
+    writer.close()
     print(f"best performing MLP configuration:{top_performer['mlp_conf']}")
 
 

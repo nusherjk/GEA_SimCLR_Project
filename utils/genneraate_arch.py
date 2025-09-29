@@ -13,9 +13,11 @@ import numpy as np
 
 HIDDEN_SIZES = [64, 128, 256, 512]
 ACTIVATIONS = ['relu', 'silu', 'tanh']
+BATCHNORM = [True, False]
 NUM_LAYERS = 6
 INPUT_DIM = 512
 mlp_bench = []
+
 
 for combo in itertools.product(HIDDEN_SIZES, ACTIVATIONS, repeat=NUM_LAYERS):
     layers = []
@@ -23,6 +25,7 @@ for combo in itertools.product(HIDDEN_SIZES, ACTIVATIONS, repeat=NUM_LAYERS):
     for i in range(NUM_LAYERS):
         out_dim = combo[i*2]
         act = combo[i*2+1]
+        # btnrm = combo[i*2]
 
         layers.append({'in': in_dim, 'out': out_dim, 'activation': act})
         in_dim = out_dim
