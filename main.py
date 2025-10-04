@@ -2,7 +2,7 @@ import pprint
 import torch
 import os
 from torch.utils.tensorboard import SummaryWriter
-
+import sys
 from models.encoder_simCLR import Encoder
 from models.mlp_projector import MLPProjector
 
@@ -17,9 +17,9 @@ import numpy as np
 # P/S/C=10/5/200.
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-BATCH_SIZE = 64
-EPOCHS = 50
-C = 100  # 200
+BATCH_SIZE = 128
+EPOCHS = 25
+C = 50  # 200
 P = 10  # 10
 S = 5 # 5
 
@@ -30,6 +30,19 @@ POPULATION_FILE = "./population.json"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 # os.makedirs(HISTORY_FILE, exist_ok=True)
 # os.makedirs(POPULATION_FILE, exist_ok=True)
+class Logger(object):
+    def __init__(self, filename):
+        self.terminal = sys.stdout
+        self.log = open(filename, "a")
+
+    def write(self, message):
+        self.terminal.write(message)   # print to console
+        self.log.write(message)        # write to file
+
+    def flush(self):
+        pass  # needed for Python compatibility
+
+sys.stdout = Logger("output_log.txt")
 
 
 # --- History management ---

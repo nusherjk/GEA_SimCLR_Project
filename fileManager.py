@@ -40,14 +40,14 @@ def load_checkpoint(path, encoder, projector, device="cpu"):
 
 
 def load_population():
-    if os.path.exists(HISTORY_FILE):
+    if os.path.exists(POPULATION_FILE):
         with open(POPULATION_FILE, "r") as f:
             return json.load(f)
     return []
 
 
 def save_population(population):
-    with open(HISTORY_FILE, "w") as f:
+    with open(POPULATION_FILE, "w") as f:
         json.dump(population, f, indent=4)
 
 

@@ -98,7 +98,7 @@ def train_simclr(
     device=None,
     num_workers=4
 ):
-    writer = SummaryWriter(log_dir="runs/train_log{}")
+    # writer = SummaryWriter(log_dir="runs/train_log{}")
     """
     Trains SimCLR on CIFAR-10 using your SimCLR(nn.Module).
     """
@@ -161,7 +161,7 @@ def train_simclr(
         scheduler.step()
         avg_loss = epoch_loss / len(train_loader)
         print(f"Epoch [{epoch}/{epochs}] - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.2e}")
-        writer.close()
+        # writer.close()
 
 
     return encoder, projection_head
