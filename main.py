@@ -42,8 +42,8 @@ class Logger(object):
     def flush(self):
         pass  # needed for Python compatibility
 
-sys.stdout = Logger("output_log.txt")
 
+sys.stdout = Logger("output_log.txt")
 
 # --- History management ---
 def load_history():

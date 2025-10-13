@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     writer = SummaryWriter(log_dir='./logs/GenerationsVAccuracy')
 
-    i = 0
+    i = len(history) - P
 
     while len(history) < C:
         i += 1
