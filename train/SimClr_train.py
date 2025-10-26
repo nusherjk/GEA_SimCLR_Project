@@ -69,7 +69,7 @@ class NTXentLoss(nn.Module):
         loss = loss / (2 * B)
         return loss
 
-def get_loader(batch_size=128):
+def get_loader(batch_size=128, num_workers=4, shuffle=True):
     train_dataset = datasets.CIFAR10(
         root="./data",
         train=True,
@@ -82,7 +82,7 @@ def get_loader(batch_size=128):
         batch_size=batch_size,
         shuffle=True,
         drop_last=True,
-        num_workers=2  # ✅ works on Linux/macOS, may need 0 on Windows
+        num_workers=num_workers  # ✅ works on Linux/macOS, may need 0 on Windows
     )
     return train_loader
 
@@ -98,7 +98,7 @@ def train_simclr(
     device=None,
     num_workers=4
 ):
-    # writer = SummaryWriter(log_dir="runs/train_log{}")
+    writer = SummaryWriter(log_dir="runs/train_log")
     """
     Trains SimCLR on CIFAR-10 using your SimCLR(nn.Module).
     """
@@ -110,7 +110,7 @@ def train_simclr(
     # train_ds = SimCLRDataset(root=root, train=True, download=True)
     # train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
     #                           num_workers=num_workers, drop_last=True)
-    train_loader = get_loader(batch_size=batch_size)
+    train_loader = get_loader(batch_size=batch_size, num_workers=num_workers)
 
     for batch in train_loader:
         print(type(batch[0]), type(batch[0][0]))
@@ -160,8 +160,9 @@ def train_simclr(
 
         scheduler.step()
         avg_loss = epoch_loss / len(train_loader)
+        writer.add_scalar("Loss/train", avg_loss, epoch)
         print(f"Epoch [{epoch}/{epochs}] - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.2e}")
-        # writer.close()
+        writer.close()
 
 
     return encoder, projection_head
