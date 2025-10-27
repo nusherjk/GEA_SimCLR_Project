@@ -1,10 +1,10 @@
 import torch
-
 from Evolution.Evolution import mutate_config, validate_config
 from fileManager import *
 from main import calculateZeroProxy
 from models.encoder_simCLR import Encoder
 from models.mlp_projector import MLPProjector
+from postTrain import post_train_linearClassifier
 from train.SimClr_train import train_simclr
 from train.eval_simCLR import evaluate
 from torch.utils.tensorboard import SummaryWriter
@@ -16,10 +16,8 @@ if __name__ == '__main__':
     # print(len(history))
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
     BATCH_SIZE = 1024
-    EPOCHS = 100
-    C = 100  # 200
-    P = 10  # 10
-    S = 5  # 5
+    EPOCHS = 800
+
 
     # ckpt_path = "results/simclr_arch_31.pt"
     # checkpoint = torch.load(ckpt_path, map_location=torch.device(DEVICE))  # or 'cuda'
@@ -36,7 +34,8 @@ if __name__ == '__main__':
                                       num_workers=16,
                                       )
 
-    accuracy = evaluate(encoder, DEVICE)
+
+    accuracy = post_train_linearClassifier(encoder, DEVICE)
 
 
     print('top1 accuracy: {}'.format(accuracy))
