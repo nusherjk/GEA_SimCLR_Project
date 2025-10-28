@@ -24,7 +24,7 @@ if __name__ == '__main__':
     config = [{'in': 512, 'out': 192, 'activation': 'tanh'}, {'in': 192, 'out': 128, 'activation': 'tanh', 'batchnorm': True}, {'in': 128, 'out': 128, 'activation': 'silu'}]
     # Create your model instances first
     encoder, projector = train_simclr(root="./data",
-                                      epochs=EPOCHS,
+                                      epochs=1,
                                       batch_size=BATCH_SIZE,
                                       lr=3e-4,
                                       weight_decay=1e-6,

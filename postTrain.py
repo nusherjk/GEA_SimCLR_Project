@@ -22,11 +22,11 @@ def post_train_linearClassifier(model, device):
             h = model(x)
             features.append(h.cpu())
             labels.append(y)
-    features = torch.cat(features, dim=0)
-    labels = torch.cat(labels, dim=0)
+    features = torch.cat(features, dim=0).to(device)
+    labels = torch.cat(labels, dim=0).to(device)
 
     # Train linear classifier
-    clf = nn.Linear(features.size(1), 10)
+    clf = nn.Linear(features.size(1), 10).to(device)
     optimizer = optim.Adam(clf.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
 
