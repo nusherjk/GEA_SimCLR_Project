@@ -5,7 +5,7 @@ from main import calculateZeroProxy
 from models.encoder_simCLR import Encoder
 from models.mlp_projector import MLPProjector
 from postTrain import post_train_linearClassifier
-from train.SimClr_train import train_simclr
+from train.SimClr_train import train_simclr_cifar100
 from train.eval_simCLR import evaluate
 from torch.utils.tensorboard import SummaryWriter
 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # checkpoint = torch.load(ckpt_path, map_location=torch.device(DEVICE))  # or 'cuda'
     config = [{'in': 512, 'out': 192, 'activation': 'tanh'}, {'in': 192, 'out': 128, 'activation': 'tanh', 'batchnorm': True}, {'in': 128, 'out': 128, 'activation': 'silu'}]
     # Create your model instances first
-    encoder, projector = train_simclr(root="./data",
+    encoder, projector = train_simclr_cifar100(root="./data",
                                       epochs=EPOCHS,
                                       batch_size=BATCH_SIZE,
                                       lr=3e-4,

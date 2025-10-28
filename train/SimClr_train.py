@@ -85,6 +85,102 @@ def get_loader(batch_size=128, num_workers=4, shuffle=True):
         num_workers=num_workers  # ✅ works on Linux/macOS, may need 0 on Windows
     )
     return train_loader
+def get_loader_CIFAR100(batch_size=128, num_workers=4, shuffle=True):
+    train_dataset = datasets.CIFAR100(
+        root="./data",
+        train=True,
+        download=True,
+        transform=SimCLRTransform(size=32)
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True,
+        num_workers=num_workers  # ✅ works on Linux/macOS, may need 0 on Windows
+    )
+    return train_loader
+
+def train_simclr_cifar100(
+    root="./data",
+    epochs=100,
+    batch_size=32,
+    lr=1e-3,
+    weight_decay=1e-6,
+    temperature=0.5,
+    projector_config=None,
+    device=None,
+    num_workers=4
+):
+    writer = SummaryWriter(log_dir="runs/train_log")
+    """
+    Trains SimCLR on CIFAR-100 using your SimCLR(nn.Module).
+    """
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # Data
+
+    # train_ds = SimCLRDataset(root=root, train=True, download=True)
+    # train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
+    #                           num_workers=num_workers, drop_last=True)
+    train_loader = get_loader_CIFAR100(batch_size=batch_size, num_workers=num_workers)
+
+    for batch in train_loader:
+        print(type(batch[0]), type(batch[0][0]))
+        break
+
+    # Model
+    if projector_config is None:
+        projector_config = [
+            {'in': 512, 'out': 2048, 'activation': 'relu', 'batchnorm': True},
+            {'in': 2048, 'out': 128}  # final layer, projection
+        ]
+    # update
+    encoder = Encoder().to(device)
+    # feat_dim = encoder.out_dim
+    projection_head = MLPProjector(projector_config).to(device)
+    params = list(encoder.parameters()) + list(projection_head.parameters())
+    # Optimizer
+    optimizer = optim.AdamW(params, lr=lr, weight_decay=weight_decay)
+
+    # Loss
+    ntxent = NTXentLoss(batch_size=batch_size, temperature=temperature, device=device)
+
+    # Scheduler
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+
+    # Training loop
+    for epoch in range(1, epochs + 1):
+        encoder.train()
+        projection_head.train()
+        epoch_loss = 0.0
+        for (x1, x2), y in train_loader:
+            x1, x2 = x1.to(device), x2.to(device)
+
+            optimizer.zero_grad()
+
+            h1 = encoder(x1)
+            h2 = encoder(x2)
+            z1 = projection_head(h1)
+            z2 = projection_head(h2)
+
+            loss = ntxent(z1, z2)
+            loss.backward()
+            optimizer.step()
+
+            epoch_loss += loss.item()
+            # writer.add_scalar("Loss/train", loss.item(), epoch)
+
+        scheduler.step()
+        avg_loss = epoch_loss / len(train_loader)
+        writer.add_scalar("Loss/train", avg_loss, epoch)
+        print(f"Epoch [{epoch}/{epochs}] - Loss: {avg_loss:.4f} - LR: {scheduler.get_last_lr()[0]:.2e}")
+        writer.close()
+
+
+    return encoder, projection_head
 
 
 def train_simclr(
